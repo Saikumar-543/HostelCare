@@ -1,0 +1,5 @@
+out/
+uploads/*
+!uploads/.gitkeep
+*.class
+.vscode/
