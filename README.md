@@ -1,159 +1,552 @@
-# HostelCare
+🏠 HostelCare — Hostel Complaints & Maintenance
 
-**Report. Track. Resolve.**
+Smart Hostel Issue Reporting & Resolution Platform
 
-A complete Hostel Complaint and Maintenance Management System built with
-Java Swing, JDBC, and MySQL. Three roles - Student, Admin/Warden, and
-Maintenance Staff - each get their own dashboard, wired to a real MySQL
-database, with image evidence upload and a full complaint lifecycle.
+HostelCare is a web-based hostel management and complaint-resolution platform designed to make it easier for students to report hostel problems and for administrators to track, manage, assign, and resolve those issues efficiently.
 
-## What's implemented
+Instead of students repeatedly approaching hostel staff for problems such as water, electricity, Wi-Fi, fans, washing machines, food, cleaning, and room maintenance, HostelCare provides a centralized digital platform for reporting and managing complaints.
 
-- **Student**: register, login, dashboard with live stats, submit a complaint
-  (category-specific fields for food & washing-machine issues, up to 3 image
-  uploads with live preview), track status, view resolution photos.
-- **Admin**: dashboard with KPI cards and two bar charts (by category, by
-  month), searchable/filterable complaint table, assign staff (sorted by
-  matching specialization + lowest workload), change priority, close resolved
-  complaints, Students list, Staff list, Reports tab (avg. resolution time,
-  most common category, category spotlight).
-- **Staff**: dashboard with assigned-complaint stats, start work, add a
-  timeline update, upload a resolution ("after") photo and mark resolved.
-- **Shared**: auto-generated complaint IDs (CMP1001, CMP1002, ...),
-  auto-suggested priority via simple keyword rules (no AI), an enforced
-  status workflow (SUBMITTED → PENDING → ASSIGNED → IN_PROGRESS → RESOLVED →
-  CLOSED), and a per-complaint timeline.
+🔗 Live Application:  
+https://fabulous-hostel-ease-hub.base44.app/student
 
-## Project Structure
+---
 
-```
-HostelCare/
-├── src/
-│   ├── model/       Student, Admin, MaintenanceStaff, Complaint, ComplaintImage, ComplaintUpdate
-│   ├── enums/       ComplaintCategory, Priority, ComplaintStatus
-│   ├── dao/         StudentDAO, AdminDAO, StaffDAO, ComplaintDAO, ImageDAO, ComplaintUpdateDAO
-│   ├── service/     AuthService, ComplaintService, ImageService, PriorityService, PasswordUtil
-│   ├── database/    DBConnection
-│   ├── ui/          LoginFrame, RegisterDialog, StudentDashboard, AdminDashboard,
-│   │                StaffDashboard, ComplaintForm, ComplaintDetails, UITheme,
-│   │                BarChartPanel, TableButtonColumn
-│   └── Main.java
-├── database/
-│   └── schema.sql    Full MySQL schema + sample data (run this first)
-├── uploads/           Where complaint/resolution images are actually stored
-└── README.md
-```
+📌 Problem Statement
 
-## 1. Set up MySQL
+Managing complaints in a large hostel through verbal communication, WhatsApp messages, phone calls, or informal communication creates several problems:
 
-1. Make sure MySQL Server is installed and running.
-2. Run the schema file - it creates the `hostel_maintenance` database, all
-   7 tables, and a few sample accounts:
-   ```bash
-   mysql -u root -p < database/schema.sql
-   ```
-   (Or open `database/schema.sql` in MySQL Workbench and click Execute.)
+- Complaints can be forgotten or lost.
+- Students don't know the status of their complaints.
+- Multiple students may report the same issue.
+- Administrators have difficulty prioritizing urgent problems.
+- Maintenance staff may not receive clear issue details.
+- There is no centralized complaint history.
+- Students have limited visibility into the resolution process.
 
-3. Configure the database connection without putting credentials in source:
-   ```powershell
-   $env:HOSTEL_DB_USER = "root"
-   $env:HOSTEL_DB_PASSWORD = "your-password"
-   ```
-   You can also pass `-DHOSTEL_DB_USER=...` and `-DHOSTEL_DB_PASSWORD=...` to
-   Java. Change `HOSTEL_DB_URL` when MySQL is running on another host.
+HostelCare addresses these problems through a centralized complaint management system.
 
-### Demo accounts (created by schema.sql)
+---
 
-| Role    | Email               | Password    |
-|---------|---------------------|-------------|
-| Student | sai@hostel.com      | password123 |
-| Admin   | admin@hostel.com    | admin123    |
-| Staff   | ravi@hostel.com     | staff123    |
+💡 Solution
 
-## 2. Get the MySQL JDBC driver
+HostelCare provides a structured workflow:
 
-The JDK does **not** include a MySQL driver, so you need to add one:
-
-1. Download **MySQL Connector/J** (a `.jar` file) from
-   https://dev.mysql.com/downloads/connector/j/ (choose "Platform Independent").
-2. Unzip it and note the path to `mysql-connector-j-<version>.jar`.
-
-## 3. Run it
-
-### Option A — VS Code (recommended)
-
-1. Open the `HostelCare` folder in VS Code.
-2. Install the **Extension Pack for Java** (Microsoft) if you haven't already.
-3. Add the driver: `Java Projects` panel → right-click **Referenced Libraries**
-   → **Add Jar** → select the `mysql-connector-j-<version>.jar` you downloaded.
-4. Open `src/Main.java` and click **Run** above `public static void main`.
-
-### Option B — Command line
-
-```bash
-cd HostelCare/src
-javac -d ../out $(find . -name "*.java")
-cd ..
-java -cp "out:/path/to/mysql-connector-j-9.x.x.jar" Main
-```//
-(On Windows, use `;` instead of `:` in the classpath, e.g. `-cp "out;C:\libs\mysql-connector-j-9.x.x.jar"`.)
-
-## 4. Try the workflow
-
-1. Log in as the **student** (or register a new one) → **+ New Complaint** →
-   pick a category, write a description, attach a photo → Submit. Note the
-   generated complaint ID and auto-suggested priority.
-2. Log out, log in as **admin** → **Complaints** tab → find the complaint →
-   **View** → assign it to a staff member (matching specialization is listed
-   first).
-3. Log out, log in as **staff** → **View** the complaint → **Start Work** →
-   add a timeline update → **Upload Resolution Image & Mark Resolved**.
-4. Log back in as the student to see it marked RESOLVED with the after photo.
-5. Log back in as admin → close the complaint, and check the **Reports** tab
-   for updated stats.
-
-## Notes on scope
-
-- Images are never stored in MySQL - only their path/name/size/type are
-  (see `complaint_images` table); the actual files live in `uploads/`.
-- Passwords are hashed with salted SHA-256 (`service/PasswordUtil.java`) -
-  no plain-text passwords are ever stored or compared.
-- All user input goes through `PreparedStatement` - no string-concatenated SQL.
-- This is intentionally a plain Java Swing + JDBC + MySQL desktop app (no
-  Spring Boot, no web framework, no AI/ML) so it stays approachable as a
-  college/resume project.
-
-## 5. Web dashboard preview
-
-The `web/` folder contains a responsive browser implementation of the
-HostelCare workflow. It includes role-based login, separate Student/Admin/
-Staff modes, complaint search and filters, complaint details with a timeline,
-admin assignment and closing actions, staff start/resolve actions, student
-read-only tracking, before-image upload previews, and resolution-photo upload
-controls. It is currently frontend-only, so data is held in browser memory.
-
-For the frontend-only preview, run it from the project root:
-
-```powershell
-cd web
-python -m http.server 4173
+```text
+Student
+   ↓
+Reports Hostel Issue
+   ↓
+Complaint Created
+   ↓
+Admin Reviews Issue
+   ↓
+Priority / Assignment
+   ↓
+Maintenance Team
+   ↓
+Issue Resolved
+   ↓
+Student Receives Status
 ```
 
-Then open http://localhost:4173.
+This creates a transparent process from **problem reporting → assignment → resolution**.
 
-### Run the integrated Java web app
+---
 
-The project also includes `web.WebServer`, a lightweight same-origin API that
-uses the existing `AuthService`, `ComplaintService`, DAOs, MySQL schema, and
-role sessions. First run the schema and configure the database variables as
-described above, then from the project root run:
+🎯 Key Objectives
 
-```powershell
-$sourceFiles = Get-ChildItem -Path src -Filter *.java -Recurse | ForEach-Object { $_.FullName }
-javac -cp "lib\mysql-connector-j-9.4.0.jar" -d out $sourceFiles
-java -cp "out;lib\mysql-connector-j-9.4.0.jar" web.WebServer
+- Provide an easy way for students to report hostel problems.
+- Centralize all hostel complaints.
+- Help administrators monitor unresolved issues.
+- Prioritize critical complaints.
+- Improve communication between students and hostel management.
+- Reduce response and resolution time.
+- Maintain complaint history.
+- Provide better visibility into hostel maintenance.
+
+---
+
+ 🚀 Core Features
+
+👨‍🎓 Student Portal
+
+Students can use the platform to report and monitor hostel problems.
+
+ Complaint Reporting
+
+Students can submit complaints related to areas such as:
+
+- 💡 Electricity
+- 🚰 Water
+- 📶 Wi-Fi
+- 🌀 Fan / AC
+- 🧺 Washing Machine
+- 🍛 Food
+- 🧹 Cleaning
+- 🛏️ Room Maintenance
+- 🔧 Other Maintenance Issues
+
+A complaint can contain relevant information about the issue so that hostel staff can understand and act on it.
+
+Complaint Tracking
+
+Students can track the progress of submitted complaints instead of repeatedly asking hostel staff for updates.
+
+Typical workflow:
+
+```text
+Submitted
+   ↓
+Under Review
+   ↓
+Assigned
+   ↓
+In Progress
+   ↓
+Resolved
 ```
 
-Open http://localhost:8080. The browser client uses the API automatically for
-login and complaint lists; the 4173 preview remains available as a demo
-fallback when the database server is not running.
+---
+
+👨‍💼 Admin / Management
+
+The administrator can act as the central authority for managing hostel complaints.
+
+### Complaint Management
+
+Administrators can:
+
+- View reported issues
+- Review complaint details
+- Identify high-priority issues
+- Assign complaints
+- Monitor pending complaints
+- Track ongoing work
+- Verify completed work
+- Manage complaint status
+
+---
+
+🛠️ Maintenance Workflow
+
+Once an issue is assigned to maintenance personnel, the complaint can move through the resolution process.
+
+```text
+NEW
+ │
+ ▼
+UNDER REVIEW
+ │
+ ▼
+ASSIGNED
+ │
+ ▼
+IN PROGRESS
+ │
+ ▼
+RESOLVED
+```
+
+This provides a structured workflow rather than relying on informal communication.
+
+---
+
+📊 Complaint Categories
+
+HostelCare can organize complaints into categories to make management easier.
+
+| Category | Example |
+|---|---|
+| Electricity | Light not working |
+| Water | No water / leakage |
+| Wi-Fi | Internet unavailable |
+| Fan / AC | Fan not working |
+| Washing | Washing machine problem |
+| Food | Food quality complaint |
+| Cleaning | Room/common-area cleaning |
+| Maintenance | Furniture/plumbing issues |
+| Other | Miscellaneous hostel problems |
+
+---
+
+⭐ Why HostelCare?
+
+Traditional Approach
+
+```text
+Student
+   ↓
+Tells Warden
+   ↓
+Warden remembers
+   ↓
+Contacts Maintenance
+   ↓
+Maintenance checks
+   ↓
+Student waits
+```
+
+Problems:
+
+❌ No proper tracking  
+❌ Complaints can be forgotten  
+❌ No centralized history  
+❌ Difficult to prioritize  
+❌ Poor visibility  
+
+ HostelCare Approach
+
+```text
+Student
+   ↓
+Digital Complaint
+   ↓
+Admin Dashboard
+   ↓
+Priority + Assignment
+   ↓
+Maintenance
+   ↓
+Resolution
+   ↓
+Status Update
+```
+
+Benefits:
+
+✅ Centralized complaints  
+✅ Better tracking  
+✅ Faster communication  
+✅ Clear responsibility  
+✅ Better transparency  
+✅ Digital complaint history  
+
+---
+
+ 🏗️ Application Architecture
+
+The application follows a simple role-based workflow:
+
+```text
+                 ┌────────────────────┐
+                 │     HostelCare     │
+                 │   Web Application  │
+                 └─────────┬──────────┘
+                           │
+             ┌─────────────┴─────────────┐
+             │                           │
+       ┌─────▼─────┐               ┌─────▼─────┐
+       │  Student  │               │   Admin   │
+       │   Portal  │               │   Portal  │
+       └─────┬─────┘               └─────┬─────┘
+             │                           │
+             │       Complaints          │
+             └────────────┬──────────────┘
+                          │
+                   ┌──────▼──────┐
+                   │  Complaint  │
+                   │  Management │
+                   └──────┬──────┘
+                          │
+                   ┌──────▼──────┐
+                   │ Maintenance │
+                   │   Process   │
+                   └──────┬──────┘
+                          │
+                   ┌──────▼──────┐
+                   │   Resolved  │
+                   │    Issue    │
+                   └─────────────┘
+```
+
+---
+
+ 🖥️ Live Deployment
+
+The current live application is deployed and accessible online.
+
+ Student Portal
+
+🔗 **https://fabulous-hostel-ease-hub.base44.app/student**
+
+The deployed application is publicly reachable and identifies itself as HostelCare — Hostel Complaints & Maintenance.
+
+ Application Home
+
+🔗 **https://fabulous-hostel-ease-hub.base44.app/**
+
+---
+
+ 🧰 Technology
+
+The current project is deployed through **Base44**.
+
+The application is intended as a modern web-based hostel management solution with a role-oriented interface for students and hostel administration.
+
+> Note: The public deployment does not expose enough information to reliably claim a specific frontend framework, backend framework, database, or API architecture. Those details should only be added to this README if they are actually part of your project implementation.
+
+---
+
+ 📱 Main User Flow
+
+ Student
+
+```text
+Open HostelCare
+      ↓
+Access Student Portal
+      ↓
+Report Issue
+      ↓
+Enter Complaint Details
+      ↓
+Submit Complaint
+      ↓
+Track Complaint
+      ↓
+Wait for Resolution
+      ↓
+Issue Resolved
+```
+
+---
+
+ 👨‍💼 Admin Flow
+
+```text
+Admin Login
+     ↓
+View Complaints
+     ↓
+Review Complaint
+     ↓
+Determine Priority
+     ↓
+Assign Issue
+     ↓
+Monitor Progress
+     ↓
+Verify Resolution
+     ↓
+Close Complaint
+```
+
+---
+
+🔐 Role-Based Concept
+
+HostelCare is designed around different responsibilities.
+
+Student
+
+- Report problems
+- View submitted complaints
+- Track complaint progress
+- Follow resolution status
+
+Administrator
+
+- View complaints
+- Manage complaints
+- Assign issues
+- Monitor progress
+- Manage resolution
+
+Maintenance Staff
+
+- Receive assigned issues
+- Work on assigned problems
+- Update progress
+- Mark issues as completed
+
+---
+
+📈 Future Enhancements
+
+HostelCare can be extended into a complete hostel operations platform.
+
+🔔 Notifications
+
+- Complaint submission notification
+- Assignment notification
+- Status change notification
+- Resolution notification
+
+📊 Analytics Dashboard
+
+Display:
+
+- Total complaints
+- Pending complaints
+- Resolved complaints
+- High-priority complaints
+- Average resolution time
+- Complaints by category
+
+Example:
+
+```text
+Total Issues       : 250
+Pending            : 42
+In Progress        : 31
+Resolved           : 177
+High Priority      : 12
+```
+
+🤖 Smart Complaint Prioritization
+
+A future version could automatically calculate priority based on:
+
+```text
+Severity
+   +
+Number of Students Affected
+   +
+Issue Category
+   +
+Time Pending
+   =
+Priority Score
+```
+
+For example:
+
+**Water supply failure affecting an entire hostel block**
+
+→ Critical priority
+
+while
+
+**One damaged room switch**
+
+→ Normal priority.
+
+### 📷 Image Upload
+
+Students could upload photographs of problems.
+
+Example:
+
+```text
+Complaint
+   ├── Description
+   ├── Category
+   ├── Location
+   ├── Priority
+   └── Image Evidence
+```
+
+### 📍 Location-Based Complaints
+
+Complaints could specify:
+
+- Building
+- Block
+- Floor
+- Room number
+- Common area
+
+This would help maintenance staff locate issues faster.
+
+### 🔁 Duplicate Complaint Detection
+
+If 20 students report:
+
+> "Wi-Fi not working in Block B"
+
+the system could identify them as the same underlying issue rather than creating 20 independent maintenance tasks.
+
+---
+
+# 🌟 Future Vision
+
+HostelCare can evolve from a simple complaint application into a complete **Hostel Operations Management System**.
+
+```text
+                 HOSTELCARE
+                     │
+       ┌─────────────┼─────────────┐
+       │             │             │
+   Complaints    Maintenance    Residents
+       │             │             │
+       └─────────────┼─────────────┘
+                     │
+              Smart Analytics
+                     │
+              Better Decisions
+```
+
+Potential modules:
+
+- Complaint Management
+- Maintenance Management
+- Resident Management
+- Food Feedback
+- Visitor Management
+- Hostel Notices
+- Asset Management
+- Inventory
+- Payments
+- Attendance
+- Emergency Reporting
+- Analytics
+
+---
+
+# 🎓 Academic / Project Use
+
+HostelCare can be presented as a practical software engineering project demonstrating:
+
+- Problem identification
+- User-centric application design
+- Role-based workflows
+- CRUD-based complaint management
+- Status tracking
+- Administrative management
+- Real-world deployment
+- Web application development
+
+---
+
+# 💼 Resume Description
+
+**HostelCare – Hostel Complaint & Maintenance Management System**
+
+Developed a web-based hostel complaint management platform that enables students to digitally report maintenance issues and track their resolution status. Designed a centralized workflow for administrators to review, prioritize, assign, and monitor complaints, improving transparency and reducing dependency on manual communication. Deployed the application as a live web application.
+
+---
+
+# 📌 Short Project Description
+
+> **HostelCare is a web-based hostel complaint and maintenance management platform that connects students with hostel administration through a centralized issue-reporting and resolution workflow. Students can report problems, while administrators can manage, assign, track, and resolve complaints efficiently.**
+
+---
+
+# 🔗 Live Demo
+
+### 🚀 Try HostelCare
+
+**Student Portal:**  
+https://fabulous-hostel-ease-hub.base44.app/student
+
+**Live Application:**  
+https://fabulous-hostel-ease-hub.base44.app/
+
+---
+
+# 👨‍💻 Project
+
+**Project Name:** HostelCare  
+**Category:** Hostel Complaint & Maintenance Management  
+**Type:** Web Application  
+**Deployment:** Base44  
+**Status:** 🟢 Live
+
+---
+
+# 📄 License
+
+This project can be distributed under the license selected by the project owner.
+
+If this is an academic or portfolio project, add the appropriate license before publishing the repository publicly.
